@@ -1,23 +1,30 @@
 const express = require("express")
-const multer = require("multer")
-const path = require("path")
+const fileupload =require("express-fileupload")
+const fs = require("fs")
 
 const app = express()
+app.use(express.json())
+app.use(fileupload())
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "uploads")
-    },
-    filename: (req, file, cb) => {
-      console.log(file);
-      cb(null, file.originalname)
+const docs = []
+app.post("/upload",(req,res)=>{
+  // console.log(req.files);
+  Object.keys(req.files).map(key=>{
+    if(
+      req.files[key].mimetype == "image/png" ||
+      req.files[key].mimetype == "image/jpg" ||
+      req.files[key].mimetype == "image/jpeg" ||
+      req.files[key].mimetype == "application/pdf"
+      ){
+
+
+      fs.writeFile(`${__dirname}/uploads/${key}-${req.files[key].name}`,req.files[key].data,()=>{
+        docs.push({key:req.files[key].name})
+        console.log(docs);
+        res.end("File uploaded")
+      })
     }
   })
-}).array("files", 10)
-
-app.post("/upload", upload, (req, res) => {
-  res.send("File Uploaded")
 })
 
 app.get("/download/:filename",(req,res)=>{
@@ -26,8 +33,6 @@ app.get("/download/:filename",(req,res)=>{
   res.download(__dirname+`/uploads/${filename}`)
 })
 
-
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`server running at ${PORT}`);
+app.listen(3000,()=>{
+  console.log("server is running at 3000");
 })
